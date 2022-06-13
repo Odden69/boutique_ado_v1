@@ -24,17 +24,15 @@ var style = {
         iconColor: '#dc3545'
     }
 };
-var card = elements.create('card', {
-    style: style
-});
+var card = elements.create('card', {style: style});
 card.mount('#card-element');
 
 // Handle realtime validation errors on the card element
-card.Addeventlistener('change', function (event) {
+card.addEventListener('change', function (event) {
     var errorDiv = document.getElementById('card-errors');
     if (event.error) {
         var html = `
-            <span class="icon" roles="alert">
+            <span class="icon" role="alert">
                 <i class="fas fa-times"></i>
             </span>
             <span>${event.error.message}</span>
@@ -48,44 +46,33 @@ card.Addeventlistener('change', function (event) {
 // Handle form submit
 var form = document.getElementById('payment-form');
 
-form.addEventListener('submit', function (ev) {
+form.addEventListener('submit', function(ev) {
     ev.preventDefault();
-    card.update({
-        'disabled': true
-    });
+    card.update({ 'disabled': true});
     $('#submit-button').attr('disabled', true);
-
-    // If the client secret was rendered server-side as a data-secret attribute
-    // on the <form> element, you can retrieve it here by calling `form.dataset.secret`
+    $('#payment-form').fadeToggle(100);
+    $('#loading-overlay').fadeToggle(100);
     stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-                card: card,
-            }
-    }).then(function(result) {
-    if (result.error) {
-        var errorDiv = document.getElementById('card-errors');
-        // Show error to your customer (for example, insufficient funds)
-        var html = `
-            <span class="icon" roles="alert">
-                <i class="fas fa-times"></i>
-            </span>
-            <span>${result.error.message}</span>
-        `;
-        $(errorDiv).html(html);
-        card.update({
-            'disabled': false
-        });
-        $('#submit-button').attr('disabled', false);
-    } else {
-        // The payment has been processed!
-        if (result.paymentIntent.status === 'succeeded') {
-            form.submit();
-            // Show a success message to your customer
-            // There's a risk of the customer closing the window before callback
-            // execution. Set up a webhook or plugin to listen for the
-            // payment_intent.succeeded event that handles any business critical
-            // post-payment actions.
+        payment_method: {
+            card: card,
         }
-    }
-});
+    }).then(function(result) {
+        if (result.error) {
+            var errorDiv = document.getElementById('card-errors');
+            var html = `
+                <span class="icon" role="alert">
+                <i class="fas fa-times"></i>
+                </span>
+                <span>${result.error.message}</span>`;
+            $(errorDiv).html(html);
+            $('#payment-form').fadeToggle(100);
+            $('#loading-overlay').fadeToggle(100);
+            card.update({ 'disabled': false});
+            $('#submit-button').attr('disabled', false);
+        } else {
+            if (result.paymentIntent.status === 'succeeded') {
+                form.submit();
+            }
+        }
+    });
 });
